@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Year 9 Civics & Citizenship – Unit Plan (Single HTML)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{ --ring: 219 14% 28%; }
+    .focus-ring:focus{ outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+    @media print {
+      header, nav.no-print, .no-print{ display:none !important }
+      main{ padding:0 !important }
+      body{ background:#fff }
+      a[href]::after{ content:" (" attr(href) ")"; font-size: .85em; color:#64748b }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-100 to-slate-200 text-slate-900">
+  <!-- Top Bar -->
+  <header class="sticky top-0 z-10 border-b border-slate-200 backdrop-blur bg-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center gap-4 justify-between">
+      <div>
+        <h1 id="title" class="text-2xl font-bold tracking-tight">Year 9 Civics & Citizenship – Healthy Democracy</h1>
+        <p id="subtitle" class="text-sm text-slate-600">How might a deeper understanding of living in a healthy democracy restore trust and foster civically minded students?</p>
+      </div>
+      <div class="flex items-center gap-2 no-print">
+        <button id="printBtn" class="rounded-xl px-3 py-2 bg-white border border-slate-300 focus-ring" title="Print">Print</button>
+        <button id="exportBtn" class="rounded-xl px-3 py-2 bg-white border border-slate-300 focus-ring" title="Export JSON">Export JSON</button>
+        <label class="rounded-xl px-3 py-2 bg-white border border-slate-300 focus-ring cursor-pointer" title="Import JSON">
+          Import JSON
+          <input id="importInput" type="file" accept="application/json" class="hidden" />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4 space-y-6">
+    <!-- Unit Details Card -->
+    <section class="bg-white/80 backdrop-blur rounded-2xl shadow p-5 border border-slate-200">
+      <div class="flex items-start justify-between gap-4">
+        <h2 class="text-xl font-semibold tracking-tight">Unit Details</h2>
+        <div class="flex items-center gap-3 no-print">
+          <div class="inline-flex rounded-2xl border border-slate-300 bg-slate-100 p-1" id="curriculumToggle" role="tablist" aria-label="Curriculum toggle">
+            <button data-mode="SA" class="px-3 py-1.5 text-sm rounded-xl bg-white shadow font-semibold" role="tab" aria-selected="true">SA</button>
+            <button data-mode="ACARA" class="px-3 py-1.5 text-sm rounded-xl text-slate-600" role="tab" aria-selected="false">ACARA</button>
+          </div>
+          <button id="quickEdit" class="rounded-xl px-3 py-1.5 bg-slate-900 text-white focus-ring" title="Quick edit">Quick Edit</button>
+        </div>
+      </div>
+      <div class="mt-3 grid md:grid-cols-2 gap-6" id="unitMeta" aria-live="polite"></div>
+    </section>
+
+    <!-- Tabs -->
+    <nav class="flex flex-wrap gap-2 no-print" id="tabs" role="tablist" aria-label="Sections"></nav>
+
+    <!-- Tab Panels -->
+    <div id="panel" aria-live="polite"></div>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-4 py-8 text-xs text-slate-500">
+    <div>© <span id="year"></span> Unit plan scaffold • Aligned to ACARA & South Australian Curriculum (Year 9 Civics & Citizenship).</div>
+  </footer>
+
+<script>
+/**
+ * Vanilla JS single-file site (no React) to avoid framework errors.
+ * Data is editable, exported/imported as JSON and persisted in localStorage.
+ */
+const DEFAULT_PLAN = {
+  meta: {
+    title: "Year 9 Civics & Citizenship – Healthy Democracy",
+    subtitle: "How might a deeper understanding of living in a healthy democracy restore trust and foster civically minded students?",
+    duration: "6–8 weeks",
+    author: "Daniel Maher",
+    school: "Murray Bridge High School (SA)",
+    lastUpdated: new Date().toISOString().slice(0,10),
+  },
+  curriculumView: "SA",
+  learningIntentions: [
+    "Understand how Australia's Constitution structures a federal democracy and enables change (referendums, separation of powers).",
+    "Explain how laws are made, interpreted and applied (parliament, courts, rights, responsibilities).",
+    "Evaluate how media (including social media) shapes identity, trust and civic participation.",
+    "Plan and justify a civic action addressing a school or community issue, incorporating diverse perspectives.",
+  ],
+  successCriteria: [
+    "I can analyse how the Constitution and federal system support democratic processes and change (AC9HC9K01).",
+    "I can explain how a federal policy idea becomes law and the influences on that process (AC9HC9K02).",
+    "I can describe court hierarchy, roles and rights of accused/victims; explain civil vs criminal (AC9HC9K03–K04).",
+    "I can evaluate strategies for civic participation and design a feasible, ethical action (AC9HC9S04).",
+    "I use evidence and correct civics terms to argue a position (AC9HC9S05).",
+  ],
+  dispositions: [
+    { name: "Socially conscious", notes: "Participates in actions that benefit community; recognises democratic processes." },
+    { name: "Discerning", notes: "Checks sources; weighs perspectives; anticipates consequences of actions." },
+    { name: "Principled", notes: "Acts with integrity; argues respectfully using evidence; supports others facing ethical challenges." },
+  ],
+  capabilities: {
+    CriticalInquiry: [
+      "Develop and modify inquiry questions about political/legal systems and civic issues (AC9HC9S01)",
+      "Locate, select and compare data/ideas from multiple sources (AC9HC9S02)",
+    ],
+    AnalysisEvaluation: [
+      "Analyse information to identify/evaluate different perspectives (AC9HC9S03)",
+    ],
+    CivicParticipation: [
+      "Evaluate decision-making methods and participation strategies; plan a civic action (AC9HC9S04)",
+    ],
+    Communicating: [
+      "Create evidence-based descriptions/explanations/arguments using civics terms (AC9HC9S05)",
+    ],
+  },
+  curriculumLinks: {
+    ACARA: [
+      { code: "AC9HC9K01", text: "Role of the Australian Constitution; federal system; process for constitutional change (referendum)." },
+      { code: "AC9HC9K02", text: "Legislative processes shaping federal policy; influences on policy." },
+      { code: "AC9HC9K03", text: "Court features, jurisdictions; operations of courts/tribunals." },
+      { code: "AC9HC9K04", text: "Roles in trials; rights of accused and victims; access to justice; legal aid." },
+      { code: "AC9HC9K05", text: "How/why groups participate in civic life and global citizenship." },
+      { code: "AC9HC9K06", text: "Influence of media (incl. social media) on identity and attitudes to diversity." },
+      { code: "AC9HC9S01–S05", text: "Skills: questioning/researching; analysis/evaluation; participation/decision-making; communicating." },
+    ],
+    SA: [
+      { code: "Learning Standard", text: "Investigate systems/issues; analyse perspectives; evaluate participation strategies; communicate with evidence." },
+      { code: "Dispositions", text: "Socially conscious; Discerning; Principled." },
+      { code: "Capabilities", text: "Critical inquiry; Ethical understanding; Intercultural understanding." },
+      { code: "Courts & Legal Systems", text: "Ensure just outcomes; roles, rights and access to justice." },
+      { code: "Constitution & Government", text: "Framework/principles of governance; referendums; policy process." },
+      { code: "Civic Participation & Media", text: "Worldviews; platforms; media influence on identity and fairness." },
+    ],
+  },
+  assessment: {
+    formative: [
+      { name: "Source Reliability Check", description: "Compare 3 sources (news article, gov site, NGO brief) on same issue; rate credibility & bias.", evidence: "Checklist + 200-word reflection." },
+      { name: "Socratic Seminar: Trust in Institutions", description: "Discuss prompts linking trust & healthy democracy; teacher rubric.", evidence: "Rubric + self-assessment." },
+      { name: "Court System Concept Map", description: "Visual of court hierarchy/jurisdictions; roles/rights; civil vs criminal.", evidence: "Annotated concept map." },
+    ],
+    summative: [
+      { name: "Civic Action Proposal (Group)", description: "Plan a small-scale action to improve fairness/participation in school/community (e.g., student voice survey, awareness campaign). Include consultation & evaluation.", evidence: "2–3 page proposal + 5–7 min presentation.", criteria: ["Needs analysis & stakeholder voices","Feasibility & ethics","Use of evidence & civics terms","Evaluation plan"] },
+      { name: "Evidence-Based Argument (Individual)", description: "Persuasive essay responding to the inquiry question, referencing Constitution/courts/media and action project.", evidence: "800–1000 words with citations.", criteria: ["Thesis & structure","Use of evidence","Civics terminology","Evaluation of perspectives"] },
+    ],
+  },
+  sequence: [
+    { week: 1, title: "Launching the Inquiry: What is a Healthy Democracy?", lessons: [
+      { title: "Hook & Prior Knowledge", activities: [
+        "Gallery walk of headlines about trust in institutions; students place green/red dots (trust/distrust).",
+        "Mini-lecture: features of healthy democracy (participation, fairness, accountability, separation of powers).",
+        "Inquiry reframing: 'How can understanding democracy help us trust each other and improve our community?'",
+      ], resources: ["Projector, sticky dots, digital board"] },
+      { title: "Question Crafting (AC9HC9S01)", activities: [
+        "Students draft 3 questions; class sorts into themes (Constitution, courts, media, participation).",
+        "Establish research teams & roles.",
+      ], resources: ["Question stems, wall chart/Padlet"] },
+    ]},
+    { week: 2, title: "Constitution & Change (AC9HC9K01)", lessons: [
+      { title: "Federation to Referendums", activities: [
+        "Timeline jigsaw: founders' aims, compromises, key sections (plain English).",
+        "Case carousel: 1967 Referendum, 1999 Republic — success vs failure.",
+      ], resources: ["Timeline cards, case briefs"] },
+      { title: "Policy to Law (AC9HC9K02)", activities: [
+        "Flowchart: idea → bill → committees → vote → assent; influence points (parties, interest groups, public service, citizens).",
+        "Choose a contemporary federal policy; map influences.",
+      ], resources: ["Process flow templates"] },
+    ]},
+    { week: 3, title: "Courts, Rights & Justice (AC9HC9K03–K04)", lessons: [
+      { title: "Court Hierarchy & Roles", activities: [
+        "Build a court ladder (Magistrates → District → Supreme → Federal → High Court).",
+        "Stations: judge, lawyer, jury, accused, victim; civil vs criminal scenarios.",
+      ], resources: ["Hierarchy posters, role cards"] },
+      { title: "Precedent & Interpretation", activities: [
+        "Mini-case: Mabo and native title; how precedent changes the law.",
+        "Exit ticket: How does the court system support a just democracy?",
+      ], resources: ["Case summary, exit ticket"] },
+    ]},
+    { week: 4, title: "Media, Identity & Trust (AC9HC9K06)", lessons: [
+      { title: "Media Representations", activities: [
+        "Analyse how groups are represented in sport/news; discuss impact on cohesion and trust.",
+        "Bias detector: headline rewrite challenge.",
+      ], resources: ["Clippings, projector"] },
+      { title: "Source Reliability Clinic (AC9HC9S02–S03)", activities: [
+        "CRAAP/RECAP test on three sources covering the same issue; compare in teams.",
+      ], resources: ["Source packs, rubric"] },
+    ]},
+    { week: 5, title: "Civic Action Project – Discover & Design (AC9HC9S04)", lessons: [
+      { title: "Needs Analysis & Stakeholders", activities: [
+        "Identify a school/community issue (participation, fairness, student voice).",
+        "Map stakeholders; plan consultations (survey/interviews).",
+      ], resources: ["Stakeholder map template"] },
+      { title: "Action Blueprint", activities: [
+        "Draft goals, actions, timeline, roles, ethics checklist, evaluation metrics.",
+      ], resources: ["Blueprint one-pager"] },
+    ]},
+    { week: 6, title: "Civic Action Project – Build & Share", lessons: [
+      { title: "Prototype & Feedback", activities: [
+        "Create campaign materials (poster, short video, announcement, social post).",
+        "Peer feedback using success criteria.",
+      ], resources: ["Canva/Slides, rubric"] },
+      { title: "Presentations", activities: [
+        "5–7 minute group presentations + Q&A.",
+      ], resources: ["Timer, projector"] },
+    ]},
+    { week: 7, title: "Synthesis & Argument (AC9HC9S05)", lessons: [
+      { title: "Plan the Essay", activities: [
+        "PEEL/TEAL refresher; collect evidence; outline drafting.",
+      ], resources: ["Essay planner"] },
+      { title: "Write & Confer", activities: [
+        "Draft in class; teacher conferencing; citation check.",
+      ], resources: ["Writing tools"] },
+    ]},
+    { week: 8, title: "Reflection & Evaluation", lessons: [
+      { title: "Did We Restore Trust?", activities: [
+        "Revisit Week 1 dots; reflect on shifts in trust and civic identity.",
+        "Unit feedback + next steps for authentic participation at school.",
+      ], resources: ["Reflection prompts"] },
+    ]},
+  ],
+  differentiation: [
+    "Choice boards for product (infographic, short video, Minecraft build of a 'healthy democracy' district, podcast).",
+    "Sentence starters/frames for arguments; vocabulary banks (jurisdiction, mandate, sovereignty, precedent).",
+    "Mini-lessons for reading complex sources; text simplification options.",
+    "Adjusted success criteria for students at Yr 7–8 literacy; extension: comparative case study of another democracy.",
+  ],
+  pedagogy: [
+    "Visible Learning: clear intentions & success criteria every lesson; frequent feedback cycles.",
+    "Teacher-as-evaluator: exit tickets, mid-unit checks, conferencing logs to adjust teaching.",
+    "Peer learning: protocols for discussion (Socratic, think-pair-share, jigsaw).",
+  ],
+  resources: [
+    "PEO: Australian Constitution resources",
+    "Federal Parliament Education Office: law-making process materials",
+    "Local council website (civic participation examples)",
+    "ABC Education media literacy lessons",
+  ],
+};
+
+// Helpers
+const $ = (sel, root=document) => root.querySelector(sel);
+const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+const stateKey = 'yr9-civics-plan-html';
+let plan = loadState();
+let editMode = false;
+
+function loadState(){
+  try { const raw = localStorage.getItem(stateKey); return raw? JSON.parse(raw) : structuredClone(DEFAULT_PLAN); } catch { return structuredClone(DEFAULT_PLAN); }
+}
+function saveState(){ try { localStorage.setItem(stateKey, JSON.stringify(plan)); } catch(e){} }
+
+function render(){
+  $('#title').textContent = plan.meta.title;
+  $('#subtitle').textContent = plan.meta.subtitle;
+  $('#year').textContent = new Date().getFullYear();
+
+  // Unit meta card
+  const meta = $('#unitMeta');
+  meta.innerHTML = '';
+  if(editMode){
+    meta.appendChild(editMetaField('Title','title', plan.meta.title));
+    meta.appendChild(editMetaTextarea('Inquiry / Subtitle','subtitle', plan.meta.subtitle));
+    meta.appendChild(wrapGrid([
+      editMetaField('Duration','duration', plan.meta.duration),
+      editMetaField('Author','author', plan.meta.author),
+      editMetaField('Updated','lastUpdated', plan.meta.lastUpdated),
+    ]));
+  } else {
+    meta.innerHTML = `
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div><span class="font-medium">Duration:</span> ${escapeHtml(plan.meta.duration)}</div>
+        <div><span class="font-medium">Author:</span> ${escapeHtml(plan.meta.author)}</div>
+        <div><span class="font-medium">School:</span> ${escapeHtml(plan.meta.school)}</div>
+        <div><span class="font-medium">Last updated:</span> ${escapeHtml(plan.meta.lastUpdated)}</div>
+      </div>
+      <div class="text-sm"><span class="font-medium">Dispositions:</span> ${plan.dispositions.map(d=>escapeHtml(d.name)).join(', ')}</div>
+      <div class="mt-2 text-sm"><span class="font-medium">Capabilities:</span> Critical inquiry · Ethical understanding · Intercultural understanding</div>
+      <div class="mt-3">
+        <div class="text-sm font-medium">Learning Intentions</div>
+        <ul class="list-disc pl-5 text-sm space-y-1">${plan.learningIntentions.map(li=>`<li>${escapeHtml(li)}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  // Curriculum toggle styling
+  $$('#curriculumToggle button').forEach(btn=>{
+    if(btn.dataset.mode===plan.curriculumView){
+      btn.classList.add('bg-white','shadow','font-semibold');
+      btn.classList.remove('text-slate-600');
+      btn.setAttribute('aria-selected','true');
+    } else {
+      btn.classList.remove('bg-white','shadow','font-semibold');
+      btn.classList.add('text-slate-600');
+      btn.setAttribute('aria-selected','false');
+    }
+  });
+
+  // Tabs
+  const tabs = ["Overview","Sequence","Assessment","Curriculum","Differentiation","Resources"];
+  const tabsEl = $('#tabs');
+  tabsEl.innerHTML = '';
+  tabs.forEach(t=>{
+    const b=document.createElement('button');
+    b.textContent=t; b.dataset.tab=t; b.setAttribute('role','tab');
+    b.className = `px-4 py-2 rounded-xl border bg-white border-slate-300 focus-ring`;
+    tabsEl.appendChild(b);
+  });
+  // Persist last tab
+  const lastTab = sessionStorage.getItem('yr9-tab') || 'Overview';
+  selectTab(lastTab);
+}
+
+function editMetaField(label,key,val){
+  const w=document.createElement('div');
+  w.innerHTML = `<label class="text-xs uppercase text-slate-500">${label}</label>
+    <input data-key="${key}" class="w-full rounded-xl border px-3 py-2 meta-edit" value="${escapeHtml(val)}" />`;
+  return w;
+}
+function editMetaTextarea(label,key,val){
+  const w=document.createElement('div');
+  w.innerHTML = `<label class="text-xs uppercase text-slate-500">${label}</label>
+    <textarea data-key="${key}" rows="3" class="w-full rounded-xl border px-3 py-2 meta-edit">${escapeHtml(val)}</textarea>`;
+  return w;
+}
+function wrapGrid(children){
+  const g=document.createElement('div');
+  g.className='grid grid-cols-3 gap-3';
+  children.forEach(c=>g.appendChild(c));
+  return g;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[s]));
+}
+
+function selectTab(tab){
+  sessionStorage.setItem('yr9-tab', tab);
+  $$('#tabs button').forEach(b=>{
+    if(b.dataset.tab===tab){
+      b.classList.remove('bg-white','border-slate-300');
+      b.classList.add('bg-slate-900','text-white','border-slate-900');
+      b.setAttribute('aria-selected','true');
+    } else {
+      b.classList.add('bg-white','border-slate-300');
+      b.classList.remove('bg-slate-900','text-white','border-slate-900');
+      b.setAttribute('aria-selected','false');
+    }
+  });
+  const panel = $('#panel');
+  panel.innerHTML='';
+  if(tab==='Overview') renderOverview(panel);
+  if(tab==='Sequence') renderSequence(panel);
+  if(tab==='Assessment') renderAssessment(panel);
+  if(tab==='Curriculum') renderCurriculum(panel);
+  if(tab==='Differentiation') renderDiff(panel);
+  if(tab==='Resources') renderResources(panel);
+}
+
+function renderOverview(root){
+  root.innerHTML = `
+  <div class="grid lg:grid-cols-2 gap-6">
+    ${card('Success Criteria', listEditor(plan.successCriteria,'successCriteria','Add a success criterion…'))}
+    ${card('Unit Pedagogy (Visible Learning)', listEditor(plan.pedagogy,'pedagogy','Add a pedagogy note…'))}
+    ${card('Dispositions (SA)', `<ul class='list-disc pl-5 space-y-2'>${plan.dispositions.map(d=>`<li><span class='font-medium'>${escapeHtml(d.name)}:</span> ${escapeHtml(d.notes)}</li>`).join('')}</ul>`)}
+    ${card('Capabilities', `<ul class='list-disc pl-5 space-y-2'>
+      <li><span class='font-medium'>Critical inquiry:</span> ${escapeHtml(plan.capabilities.CriticalInquiry.join('; '))}</li>
+      <li><span class='font-medium'>Analysis & evaluation:</span> ${escapeHtml(plan.capabilities.AnalysisEvaluation.join('; '))}</li>
+      <li><span class='font-medium'>Civic participation:</span> ${escapeHtml(plan.capabilities.CivicParticipation.join('; '))}</li>
+      <li><span class='font-medium'>Communicating:</span> ${escapeHtml(plan.capabilities.Communicating.join('; '))}</li>
+    </ul>`)}
+  </div>`;
+  bindListEditors(root);
+}
+
+function renderSequence(root){
+  root.innerHTML = plan.sequence.map(block=>`
+    <div class="rounded-2xl border border-slate-200 p-5 bg-white mb-4">
+      <div class="flex items-center justify-between">
+        <h4 class="text-lg font-semibold">Week ${block.week}: ${escapeHtml(block.title)}</h4>
+        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium border-slate-300 bg-slate-50">${block.lessons?.length||0} lessons</span>
+      </div>
+      <div class="grid md:grid-cols-2 gap-4 mt-3">
+        ${(block.lessons||[]).map(lsn=>`
+          <div class="rounded-xl border border-slate-200 p-4">
+            <div class="font-semibold">${escapeHtml(lsn.title)}</div>
+            ${lsn.activities?.length?`<div class='mt-2'><div class='text-sm font-medium'>Activities</div><ul class='list-disc pl-5 text-sm space-y-1'>${lsn.activities.map(a=>`<li>${escapeHtml(a)}</li>`).join('')}</ul></div>`:''}
+            ${lsn.resources?.length?`<div class='mt-2'><div class='text-sm font-medium'>Resources</div><ul class='list-disc pl-5 text-sm space-y-1'>${lsn.resources.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ul></div>`:''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAssessment(root){
+  root.innerHTML = `
+  <div class="grid lg:grid-cols-2 gap-6">
+    ${card('Formative Assessment', `<ul class='list-disc pl-5 space-y-2'>${plan.assessment.formative.map(a=>`
+      <li><div class='font-medium'>${escapeHtml(a.name)}</div><div class='text-sm'>${escapeHtml(a.description)}</div><div class='text-xs text-slate-500'>Evidence: ${escapeHtml(a.evidence)}</div></li>
+    `).join('')}</ul>`)}
+    ${card('Summative Assessment', `<ul class='list-disc pl-5 space-y-2'>${plan.assessment.summative.map(a=>`
+      <li><div class='font-medium'>${escapeHtml(a.name)}</div><div class='text-sm'>${escapeHtml(a.description)}</div>${a.criteria?`<div class='text-xs text-slate-500'>Criteria: ${escapeHtml(a.criteria.join(' · '))}</div>`:''}<div class='text-xs text-slate-500'>Evidence: ${escapeHtml(a.evidence)}</div></li>
+    `).join('')}</ul>`)}
+  </div>`;
+}
+
+function renderCurriculum(root){
+  const list = plan.curriculumView==='SA' ? plan.curriculumLinks.SA : plan.curriculumLinks.ACARA;
+  root.innerHTML = `
+  <div class="grid md:grid-cols-2 gap-6">
+    ${card(plan.curriculumView==='SA'? 'SA Curriculum Links':'ACARA Links', `<ul class='list-disc pl-5 space-y-2'>${list.map(c=>`<li><span class='font-medium'>${escapeHtml(c.code)}:</span> ${escapeHtml(c.text)}</li>`).join('')}</ul>`)}
+    ${card('Learning Resources', listEditor(plan.resources,'resources','Add a resource or link description…'))}
+  </div>`;
+  bindListEditors(root);
+}
+
+function renderDiff(root){
+  root.innerHTML = card('Adjustments & Differentiation', listEditor(plan.differentiation,'differentiation','Add an adjustment idea…'));
+  bindListEditors(root);
+}
+
+function renderResources(root){
+  root.innerHTML = card('Teacher Notes', `<p class='text-sm'>Use the Export button to save this plan as JSON. Import later to continue editing. Print generates a clean copy for PDP evidence or sharing.</p>
+  <ul class='list-disc pl-5 text-sm space-y-1 mt-2'>
+    <li>Action project ideas: student voice survey, fairness policy explainer, media literacy mini-campaign, peer court role-play.</li>
+    <li>Embed digital tools students enjoy (Canva, Google Slides, Minecraft civic-space builds).</li>
+    <li>Establish discussion norms (respect, evidence, turn-taking) to cultivate principled discourse.</li>
+  </ul>`);
+}
+
+function card(title, inner){
+  return `<section class='bg-white/80 backdrop-blur rounded-2xl shadow p-5 border border-slate-200'><h2 class='text-xl font-semibold tracking-tight'>${escapeHtml(title)}</h2><div class='mt-3 prose prose-slate max-w-none'>${inner}</div></section>`;
+}
+
+function listEditor(items, key, placeholder){
+  return `<ul class='list-disc pl-5 space-y-1' data-edit-key='${key}'>${items.map((t,i)=>`<li class='group flex items-start gap-2'><span class='flex-1'>${escapeHtml(t)}</span><button data-del='${i}' class='opacity-0 group-hover:opacity-100 text-xs text-red-600'>remove</button></li>`).join('')}</ul>
+  <div class='mt-3 flex gap-2'><input class='flex-1 rounded-xl border border-slate-300 px-3 py-2' placeholder='${escapeHtml(placeholder)}' /><button class='rounded-xl px-3 py-2 bg-slate-900 text-white' data-add='1'>Add</button></div>`;
+}
+
+function bindListEditors(root){
+  $$('ul[data-edit-key]', root).forEach(ul=>{
+    const key=ul.dataset.editKey;
+    ul.addEventListener('click', e=>{
+      const btn=e.target.closest('[data-del]');
+      if(!btn) return;
+      const idx=+btn.dataset.del;
+      plan[key]=plan[key].filter((_,i)=>i!==idx);
+      saveState(); selectTab(sessionStorage.getItem('yr9-tab'));
+    });
+    const addWrap = ul.nextElementSibling;
+    const addBtn = $('[data-add]', addWrap);
+    const input = $('input', addWrap);
+    addBtn.addEventListener('click', ()=>{
+      const v=input.value.trim(); if(!v) return; plan[key].push(v); input.value=''; saveState(); selectTab(sessionStorage.getItem('yr9-tab'));
+    });
+  });
+}
+
+// Events
+$('#printBtn').addEventListener('click', ()=> window.print());
+$('#exportBtn').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(plan, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download = `${plan.meta.title.replace(/[^a-z0-9]+/gi,'-')}.json`; a.click(); URL.revokeObjectURL(url);
+});
+$('#importInput').addEventListener('change', e=>{
+  const f=e.target.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ plan = JSON.parse(r.result); saveState(); render(); }catch{ alert('Invalid JSON'); } }; r.readAsText(f);
+});
+$('#quickEdit').addEventListener('click', ()=>{
+  editMode=!editMode; $('#quickEdit').textContent = editMode? 'Done':'Quick Edit'; if(!editMode){ $$('.meta-edit').forEach(inp=>{ const key=inp.dataset.key; plan.meta[key]=inp.value; }); saveState(); } render();
+});
+$('#curriculumToggle').addEventListener('click', (e)=>{
+  const b=e.target.closest('button'); if(!b) return; plan.curriculumView=b.dataset.mode; saveState(); render();
+});
+$('#tabs').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return; selectTab(b.dataset.tab);
+});
+
+// Initial render
+render();
+</script>
+</body>
+</html>
